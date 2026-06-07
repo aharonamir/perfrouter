@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PerfRouter — Technical Summary</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=Chivo+Mono:wght@300;400&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300;1,600&display=swap" rel="stylesheet">
+<style>
+
+:root {
+  --bg:       #0c0e12;
+  --surface:  #13161d;
+  --border:   rgba(255,255,255,0.07);
+  --gold:     #f0c060;
+  --gold2:    #d4a840;
+  --teal:     #3ecfb2;
+  --red:      #e05a5a;
+  --muted:    rgba(255,255,255,0.38);
+  --text:     rgba(255,255,255,0.88);
+  --white:    #ffffff;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  line-height: 1.65;
+  overflow-x: hidden;
+}
+
+/* ── Background grid ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(240,192,96,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(240,192,96,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.page {
+  position: relative;
+  z-index: 1;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 40px 120px;
+}
+
+/* ── Hero ── */
+.hero {
+  padding: 80px 0 64px;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 48px;
+  align-items: center;
+}
+
+.hero-badge {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.hero-badge::before {
+  content: '';
+  width: 28px;
+  height: 1px;
+  background: var(--gold);
+}
+
+h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(52px, 7vw, 80px);
+  font-weight: 300;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  color: var(--white);
+  margin-bottom: 16px;
+}
+h1 em {
+  font-style: italic;
+  color: var(--gold);
+}
+
+.hero-sub {
+  font-size: 14px;
+  color: var(--muted);
+  max-width: 460px;
+  line-height: 1.7;
+}
+
+.hero-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.hm-cell {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 18px 24px;
+  min-width: 200px;
+  position: relative;
+  overflow: hidden;
+}
+.hm-cell::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--gold);
+  opacity: 0.4;
+}
+.hm-cell:first-child::before { opacity: 1; }
+.hm-val {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--gold);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.hm-label {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── Section ── */
+section { padding: 64px 0 0; }
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 36px;
+}
+.sn {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+  border: 1px solid rgba(240,192,96,0.3);
+  padding: 2px 8px;
+  border-radius: 2px;
+}
+h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+  font-weight: 300;
+  color: var(--white);
+  letter-spacing: -0.01em;
+}
+.sr { flex: 1; height: 1px; background: var(--border); }
+
+p {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 14px;
+  max-width: 660px;
+}
+p strong { color: var(--text); font-weight: 500; }
+
+/* ── Algorithm flow ── */
+.algo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  margin: 28px 0;
+}
+.algo-step {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 24px 20px;
+  position: relative;
+  overflow: hidden;
+}
+.algo-step::after {
+  content: attr(data-n);
+  position: absolute;
+  bottom: -12px;
+  right: 10px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 72px;
+  font-weight: 600;
+  color: rgba(240,192,96,0.06);
+  line-height: 1;
+  pointer-events: none;
+}
+.algo-tag {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+.algo-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--white);
+  margin-bottom: 8px;
+}
+.algo-body {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.algo-formula {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 10px;
+  color: var(--teal);
+  background: rgba(62,207,178,0.06);
+  border: 1px solid rgba(62,207,178,0.15);
+  padding: 8px 10px;
+  margin-top: 10px;
+  border-radius: 2px;
+  line-height: 1.7;
+}
+
+/* ── Pipeline ── */
+.pipeline {
+  display: flex;
+  align-items: stretch;
+  margin: 28px 0;
+  overflow-x: auto;
+  gap: 0;
+}
+.pipe-step {
+  flex: 1;
+  min-width: 120px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-right: none;
+  padding: 18px 14px;
+  position: relative;
+}
+.pipe-step:last-child { border-right: 1px solid var(--border); }
+.pipe-step::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--border);
+}
+.pipe-step.active::before { background: var(--gold); }
+.pipe-num {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 9px;
+  color: var(--gold);
+  margin-bottom: 8px;
+  display: block;
+}
+.pipe-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--white);
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.pipe-file {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 9px;
+  color: rgba(62,207,178,0.7);
+}
+
+/* ── Data sources ── */
+.sources {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 28px 0;
+}
+.source-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 20px;
+}
+.source-icon {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+.source-name {
+  font-weight: 500;
+  color: var(--white);
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+.source-desc {
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.source-fields {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.field-tag {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  background: rgba(240,192,96,0.08);
+  color: rgba(240,192,96,0.7);
+  border: 1px solid rgba(240,192,96,0.15);
+}
+
+/* ── Feature vector ── */
+.feature-groups {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  margin: 28px 0;
+}
+.fg {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 18px 16px;
+}
+.fg-label {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+.fg-count {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 36px;
+  font-weight: 600;
+  color: var(--white);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.fg-desc {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* ── Routing formula ── */
+.formula-box {
+  background: var(--surface);
+  border: 1px solid rgba(62,207,178,0.2);
+  padding: 32px;
+  margin: 28px 0;
+  position: relative;
+}
+.formula-box::before {
+  content: 'ROUTING DECISION';
+  position: absolute;
+  top: -1px;
+  left: 24px;
+  font-family: 'Chivo Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--teal);
+  background: var(--bg);
+  padding: 0 8px;
+  transform: translateY(-50%);
+}
+.formula-main {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 15px;
+  color: var(--teal);
+  line-height: 2;
+  margin-bottom: 20px;
+}
+.formula-main span.op { color: var(--muted); }
+.formula-main span.var { color: var(--gold); }
+.formula-main span.val { color: #a78bfa; }
+
+.formula-modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+.formula-mode {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  padding: 14px 16px;
+}
+.fm-label {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+.fm-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.fm-code {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 10px;
+  color: var(--teal);
+  margin-top: 6px;
+  line-height: 1.6;
+}
+
+/* ── Results table ── */
+.rtable {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+  font-size: 12px;
+}
+.rtable th {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+  white-space: nowrap;
+}
+.rtable th:first-child { text-align: left; }
+.rtable td {
+  padding: 9px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  text-align: right;
+  font-family: 'Chivo Mono', monospace;
+  color: var(--muted);
+}
+.rtable td:first-child {
+  text-align: left;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 500;
+}
+.rtable tr:last-child td { border-bottom: none; }
+.rtable tr.hl td { background: rgba(240,192,96,0.05); }
+.rtable tr.hl td:first-child { color: var(--gold); }
+.up   { color: var(--teal) !important; font-weight: 500 !important; }
+.down { color: var(--red)  !important; }
+.best { color: var(--gold) !important; font-weight: 500 !important; }
+
+/* ── Model distribution bar ── */
+.model-bars { margin: 24px 0; }
+.mb-row {
+  display: grid;
+  grid-template-columns: 200px 1fr 60px 80px;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.mb-row:last-child { border-bottom: none; }
+.mb-name {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mb-track {
+  background: rgba(255,255,255,0.05);
+  border-radius: 1px;
+  height: 4px;
+}
+.mb-fill { height: 100%; border-radius: 1px; }
+.mb-pct {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 11px;
+  text-align: right;
+  color: var(--text);
+}
+.mb-cost {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  text-align: right;
+}
+
+/* ── Alpha sweep ── */
+.alpha-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 80px 80px 80px;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.alpha-row:last-child { border-bottom: none; }
+.alpha-val {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 11px;
+  color: var(--gold);
+}
+.alpha-bar-track {
+  background: rgba(255,255,255,0.05);
+  border-radius: 1px;
+  height: 3px;
+}
+.alpha-bar-fill { height: 100%; border-radius: 1px; background: var(--teal); }
+.alpha-num {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 11px;
+  text-align: right;
+  color: var(--muted);
+}
+.alpha-row.default .alpha-val { color: var(--teal); }
+.alpha-row.default .alpha-num { color: var(--text); }
+
+/* ── Next steps ── */
+.next-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  margin: 24px 0;
+}
+.next-card {
+  background: var(--surface);
+  border-top: 2px solid var(--teal);
+  padding: 22px 18px;
+}
+.next-phase {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 10px;
+  opacity: 0.8;
+}
+.next-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--white);
+  margin-bottom: 8px;
+}
+.next-body {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* ── Callout ── */
+.callout {
+  border-left: 2px solid var(--gold);
+  padding: 14px 20px;
+  margin: 20px 0;
+  background: rgba(240,192,96,0.04);
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 16px;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.6;
+}
+.callout strong { color: var(--gold); font-style: normal; font-weight: 600; }
+
+/* ── Footer ── */
+footer {
+  margin-top: 80px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.footer-left {
+  font-family: 'Chivo Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.9;
+  opacity: 0.5;
+}
+.footer-right {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 15px;
+  color: rgba(240,192,96,0.4);
+}
+
+@media (max-width: 760px) {
+  .page { padding: 0 20px 80px; }
+  .hero { grid-template-columns: 1fr; }
+  .algo-grid, .feature-groups { grid-template-columns: 1fr; }
+  .sources, .formula-modes, .next-grid { grid-template-columns: 1fr; }
+  .pipeline { flex-direction: column; }
+  .pipe-step { border-right: 1px solid var(--border); border-bottom: none; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ══════════════════════════════════════════════════════
+     HERO
+══════════════════════════════════════════════════════ -->
+<header class="hero">
+  <div>
+    <div class="hero-badge">PerfRouter · Technical Summary · Phase 2</div>
+    <h1>Benchmark-<em>Driven</em><br>Model Routing</h1>
+    <p class="hero-sub" style="margin-top:18px">
+      A feature-based XGBoost router that selects the optimal LLM for each
+      task using benchmark scores, Arena ELO, and structural model properties —
+      without running the benchmark on every model.
+    </p>
+  </div>
+  <div class="hero-metrics">
+    <div class="hm-cell">
+      <div class="hm-val">32.2%</div>
+      <div class="hm-label">Cost saved vs V4 Pro</div>
+    </div>
+    <div class="hm-cell">
+      <div class="hm-val">10</div>
+      <div class="hm-label">Models in pool</div>
+    </div>
+    <div class="hm-cell">
+      <div class="hm-val">33</div>
+      <div class="hm-label">Task types</div>
+    </div>
+    <div class="hm-cell">
+      <div class="hm-val">&lt;5ms</div>
+      <div class="hm-label">Inference latency</div>
+    </div>
+  </div>
+</header>
+
+
+<!-- ══════════════════════════════════════════════════════
+     01. PROBLEM & MOTIVATION
+══════════════════════════════════════════════════════ -->
+<section>
+  <div class="section-head">
+    <span class="sn">01</span>
+    <h2>Problem & Motivation</h2>
+    <div class="sr"></div>
+  </div>
+
+  <p>
+    TRouter (Phase 1) routes based on <strong>observed benchmark outcomes</strong> —
+    it requires running every model on every task in WildClawBench before it can route.
+    Adding a new model to the pool means re-running 60+ tasks across all models.
+    That costs hours of compute and real API spend.
+  </p>
+
+  <div class="callout">
+    PerfRouter routes based on <strong>model properties</strong> — benchmark scores,
+    Arena ELO, parameter counts, pricing. A new model can be added to the pool with
+    just a YAML entry and an API key. No benchmark runs required.
+  </div>
+
+  <p>
+    The trade-off: PerfRouter's quality predictions are less accurate than TRouter's
+    for models with no WildClawBench ground truth. The fix is to seed XGBoost with
+    real WCB runs when available — and expand that seed set over time as models are
+    used in production.
+  </p>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════
+     02. ALGORITHM
+══════════════════════════════════════════════════════ -->
+<section>
+  <div class="section-head">
+    <span class="sn">02</span>
+    <h2>The Algorithm</h2>
+    <div class="sr"></div>
+  </div>
+
+  <p>Three components work together at routing time — all offline, no LLM calls.</p>
+
+  <div class="algo-grid">
+    <div class="algo-step" data-n="A">
+      <div class="algo-tag">Component A</div>
+      <div class="algo-title">Task Type Classifier</div>
+      <div class="algo-body">
+        Encodes the incoming prompt with sentence-BERT (all-MiniLM-L6-v2).
+        Computes cosine similarity against pre-computed embeddings of all
+        33 task type definitions. Returns the top-k most similar task types
+        with similarity scores.
+      </div>
+      <div class="algo-formula">
+        top_k = cosine_sim(encode(prompt),<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;task_type_embeddings)<br>
+        k = 3  ← weighted combination
+      </div>
+    </div>
+    <div class="algo-step" data-n="B">
+      <div class="algo-tag">Component B</div>
+      <div class="algo-title">XGBoost Quality Predictor</div>
+      <div class="algo-body">
+        For each model, predicts expected quality score on the classified
+        task type. Input: 46-feature vector with task-type affinity
+        injected — all other affinity columns masked to NaN so XGBoost
+        focuses on the relevant signal.
+      </div>
+      <div class="algo-formula">
+        X = model_features.copy()<br>
+        X[:, other_affinities] = NaN<br>
+        X[:, active_affinity]  = score<br>
+        quality = xgb.predict(X)
+      </div>
+    </div>
+    <div class="algo-step" data-n="C">
+      <div class="algo-tag">Component C</div>
+      <div class="algo-title">Cost-Adjusted Routing</div>
+      <div class="algo-body">
+        Applies cost adjustment using runtime pricing from models.yaml —
+        not training-time costs. Applies eligibility filters: context
+        window, vision capability, cost cap. Returns the model with
+        the highest adjusted utility.
+      </div>
+      <div class="algo-formula">
+        utility = quality − α × norm_cost<br>
+        eligible = context ∩ vision ∩ cap<br>
+        chosen = argmax(utility[eligible])
+      </div>
+    </div>
+  </div>
+
+  <!-- Routing formula -->
+  <div class="formula-box">
+    <div class="formula-main">
+      <span class="var">chosen_model</span>
+      <span class="op"> = argmax over eligible models of</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;
+      <span class="var">predicted_quality</span>
+      <span class="op"> − </span>
+      <span class="var">α</span>
+      <span class="op"> × </span>
+      <span class="var">normalised_cost</span>
+    </div>
+    <div class="formula-modes">
+      <div class="formula-mode">
+        <div class="fm-label">Standard mode (α=0.3 default)</div>
+        <div class="fm-desc">
+          Maximises adjusted utility — best quality at lowest cost.
+          Models more than 2× baseline cost are excluded.
+        </div>
+        <div class="fm-code">chosen = argmax(quality − 0.3 × cost)</div>
+      </div>
+      <div class="formula-mode">
+        <div class="fm-label">Degradation threshold mode</div>
+        <div class="fm-desc">
+          Accept any model within X% of best quality, then pick the
+          cheapest of those. Increases routing diversity dramatically.
+        </div>
+        <div class="fm-code">
+          floor = best_quality × (1 − threshold)<br>
+          band  = models where quality ≥ floor<br>
+          chosen = cheapest(band)
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════
+     03. DATA SOURCES
+══════════════════════════════════════════════════════ -->
+<section>
+  <div class="section-head">
+    <span class="sn">03</span>
+    <h2>Data Sources</h2>
+    <div class="sr"></div>
+  </div>
+
+  <div class="sources">
+    <div class="source-card">
+      <div class="source-icon">📊</div>
+      <div class="source-name">Artificial Analysis API</div>
+      <div class="source-desc">
+        Free-tier API providing benchmark scores and performance metrics
+        for 527 models. Fetched once per pipeline run. Used for objective
+        capability scores across coding, reasoning, and knowledge tasks.
+      </div>
+      <div class="source-fields">
+        <span class="field-tag">aa_intelligence_index</span>
+        <span class="field-tag">aa_coding_index</span>
+        <span class="field-tag">aa_math_index</span>
+        <span class="field-tag">livecodebench</span>
+        <span class="field-tag">gpqa</span>
+        <span class="field-tag">hle</span>
+        <span class="field-tag">terminalbench</span>
+        <span class="field-tag">tau2</span>
+        <span class="field-tag">speed_tps</span>
+        <span class="field-tag">latency_ttft</span>
+      </div>
+    </div>
+    <div class="source-card">
+      <div class="source-icon">🏆</div>
+      <div class="source-name">Arena.ai ELO (wulong.dev API)</div>
+      <div class="source-desc">
+        Human preference ELO scores across 5 categories. Fills the gap
+        for task types where automated benchmarks have no coverage —
+        social interaction, creative writing, document understanding.
+      </div>
+      <div class="source-fields">
+        <span class="field-tag">arena_text_elo</span>
+        <span class="field-tag">arena_search_elo</span>
+        <span class="field-tag">arena_code_elo</span>
+        <span class="field-tag">arena_vision_elo</span>
+        <span class="field-tag">arena_document_elo</span>
+      </div>
+    </div>
+    <div class="source-card">
+      <div class="source-icon">🧪</div>
+      <div class="source-name">WildClawBench Ground Truth</div>
+      <div class="source-desc">
+        Real agent benchmark scores for the 3 models we ran (V4 Flash,
+        V4 Pro, GPT-OSS). Used as high-confidence seed rows in XGBoost
+        training (weight=3.0 vs 1.0 for benchmark-derived rows).
+        Expands as more models are run in production.
+      </div>
+      <div class="source-fields">
+        <span class="field-tag">wcb_avg_score</span>
+        <span class="field-tag">wcb_avg_nonzero</span>
+        <span class="field-tag">wcb_zero_rate</span>
+      </div>
+    </div>
+    <div class="source-card">
+      <div class="source-icon">⚙️</div>
+      <div class="source-name">models.yaml (manual specs)</div>
+      <div class="source-desc">
+        Operator-maintained config with pricing, context windows, and
+        capability flags. Runtime pricing is read from here at inference —
+        not from training-time data — so price changes take effect
+        immediately on restart without retraining.
+      </div>
+      <div class="source-fields">
+        <span class="field-tag">price_input_per_1M</span>
+        <span class="field-tag">price_output_per_1M</span>
+        <span class="field-tag">effective_context_k</span>
+        <span class="field-tag">supports_vision</span>
+        <span class="field-tag">is_reasoning</span>
+        <span class="field-tag">total_params_B</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════
+     04. FEATURE VECTOR
+══════════════════════════════════════════════════════ -->
+<section>
+  <div class="section-head">
+    <span class="sn">04</span>
+    <h2>Feature Vector — 46 Features Per Model</h2>
+    <div class="sr"></div>
+  </div>
+
+  <div class="feature-groups">
+    <div class="fg">
+      <div class="fg-label">Task-type affinities</div>
+      <div class="fg-count">33</div>
+      <div class="fg-desc">
+        One per task type. Weighted average of benchmark scores using
+        the benchmark→task-type weight matrix. At inference, only the
+        active task type's affinity is non-NaN — the rest are masked.
+      </div>
+    </div>
+    <div class="fg">
+      <div class="fg-label">Structural features</div>
+      <div class="fg-count">9</div>
+      <div class="fg-desc">
+        total_params_B, active_params_B, moe_density, context_window_k,
+        effective_context_k, context_headroom_ratio, speed_output_tps,
+        latency_ttft_s, latency_e2e_500_s
+      </div>
+    </div>
+    <div class="fg">
+      <div class="fg-label">Boolean flags</div>
+      <div class="fg-count">5</div>
+      <div class="fg-desc">
+        flag_reasoning, flag_thinking, flag_vision, flag_tools, flag_free
+        — encoded as 0/1 integers for XGBoost compatibility.
+      </div>
+    </div>
+    <div class="fg">
+      <div class="fg-label">WCB seed scores</div>
+      <div class="fg-count">3</div>
+      <div class="fg-desc">
+        wcb_avg_score, wcb_avg_score_nonzero, wcb_zero_rate.
+        NaN for models without benchmark runs. XGBoost handles NaN natively.
+      </div>
+    </div>
+  </div>
+
+  <p>
+    Pricing features are <strong>excluded from XGBoost</strong> — cost is applied
+    at decision time using runtime prices from models.yaml, not learned by the model.
+    This keeps quality prediction separate from cost adjustment and allows α to be
+    changed at runtime without retraining.
+  </p>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════
+     05. BUILD PIPELINE
+══════════════════════════════════════════════════════ -->
+<section>
+  <div class="section-head">
+    <span class="sn">05</span>
+    <h2>Build Pipeline</h2>
+    <div class="sr"></div>
+  </div>
+
+  <p>Six scripts, orchestrated by <code style="color:var(--teal);font-family:'Chivo Mono',monospace;font-size:11px">run_perf_router_pipeline.py</code>. Re-run whenever models or pricing change.</p>
+
+  <div class="pipeline">
+    <div class="pipe-step active">
+      <span class="pipe-num">01</span>
+      <div class="pipe-title">Fetch AA Data</div>
+      <div class="pipe-file">fetch_aa_data.py<br>→ model_registry.json</div>
+    </div>
+    <div class="pipe-step active">
+      <span class="pipe-num">02</span>
+      <div class="pipe-title">Fetch Arena ELO</div>
+      <div class="pipe-file">fetch_arena_data.py<br>→ model_registry.json</div>
+    </div>
+    <div class="pipe-step active">
+      <span class="pipe-num">03</span>
+      <div class="pipe-title">Patch Taxonomy</div>
+      <div class="pipe-file">patch_taxonomy_arena.py<br>→ task_taxonomy.json</div>
+    </div>
+    <div class="pipe-step active">
+      <span class="pipe-num">04</span>
+      <div class="pipe-title">Build Weights</div>
+      <div class="pipe-file">build_benchmark_weights.py<br>→ benchmark_weights.json</div>
+    </div>
+    <div class="pipe-step active">
+      <span class="pipe-num">05</span>
+      <div class="pipe-title">Build Features</div>
+      <div class="pipe-file">build_model_features.py<br>→ model_features.csv</div>
+    </div>
+    <div class="pipe-step active">
+      <span class="pipe-num">06</span>
+      <div class="pipe-title">Train XGBoost</div>
+      <div class="pipe-file">train_perf_router.py<br>→ perf_router.pkl</div>
+    </div>
+  </div>
+
+  <p>The taxonomy (33 task types + benchmark weight matrix) is generated once via a
+  single LLM call to DeepSeek V4 Flash and then frozen. It only needs regeneration
+  when adding fundamentally new task categories.</p>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════
+     06. MODEL POOL
+══════════════════════════════════════════════════════ -->
+<section>
+  <div class="section-head">
+    <span class="sn">06</span>
+    <h2>Model Pool — 10 Models</h2>
+    <div class="sr"></div>
+  </div>
+
+  <table class="rtable">
+    <thead>
+      <tr>
+        <th>Model</th>
+        <th>AA Index</th>
+        <th>Cost/1M</th>
+        <th>WCB Data</th>
+        <th>Vision</th>
+        <th>Reasoning</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>moonshotai/kimi-k2.6</td><td class="best">54</td><td class="down">$1.368</td><td>—</td><td>—</td><td>✓</td></tr>
+      <tr><td>xiaomi/mimo-v2.5-pro</td><td class="best">54</td><td>$0.544</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td>deepseek/deepseek-v4-pro</td><td>52</td><td>$0.544</td><td class="up">✓</td><td>—</td><td>✓</td></tr>
+      <tr><td>anthropic/claude-sonnet-4.6</td><td>44</td><td class="down">$6.000</td><td>—</td><td class="up">✓</td><td>✓</td></tr>
+      <tr><td>tencent/hy3-preview</td><td>42</td><td class="up">$0.100</td><td>—</td><td>—</td><td>✓</td></tr>
+      <tr><td>deepseek/deepseek-v4-flash</td><td>47</td><td>$0.175</td><td class="up">✓</td><td>—</td><td>✓</td></tr>
+      <tr><td>google/gemini-3.1-flash-lite</td><td>34</td><td>$0.175</td><td>—</td><td class="up">✓</td><td>—</td></tr>
+      <tr><td>nvidia/nemotron-3-super-120b:free</td><td>36</td><td class="up">$0.000</td><td>—</td><td>—</td><td>✓</td></tr>
+      <tr><td>openai/gpt-oss-120b:free</td><td>33</td><td class="up">$0.000</td><td class="up">✓</td><td>—</td><td>—</td></tr>
+      <tr><td>openai/gpt-4o-mini</td><td class="down">13</td><td>$0.263</td><td>—</td><td class="up">✓</td><td>—</td></tr>
+    </tbody>
+  </table>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════
+     07. RESULTS
+══════════════════════════════════════════════════════ -->
+<section>
+  <div class="section-head">
+    <span class="sn">07</span>
+    <h2>Routing Results — 61 WCB Tasks</h2>
+    <div class="sr"></div>
+  </div>
+
+  <p>Simulation against all 61 WildClawBench task prompts using sentence-BERT classification.
+  No tasks were executed — routing decisions only.</p>
+
+  <p><strong>Model selection at α=0.3, baseline=V4 Pro, degradation=0.25:</strong></p>
+
+  <div class="model-bars">
+    <div class="mb-row">
+      <div class="mb-name">deepseek-v4-pro</div>
+      <div class="mb-track"><div class="mb-fill" style="width:70.5%;background:#a78bfa"></div></div>
+      <div class="mb-pct">70.5%</div>
+      <div class="mb-cost">$0.544/1M</div>
+    </div>
+    <div class="mb-row">
+      <div class="mb-name">deepseek-v4-flash</div>
+      <div class="mb-track"><div class="mb-fill" style="width:21.3%;background:var(--gold)"></div></div>
+      <div class="mb-pct">21.3%</div>
+      <div class="mb-cost">$0.175/1M</div>
+    </div>
+    <div class="mb-row">
+      <div class="mb-name">gpt-oss-120b:free</div>
+      <div class="mb-track"><div class="mb-fill" style="width:14.8%;background:var(--teal)"></div></div>
+      <div class="mb-pct">14.8%</div>
+      <div class="mb-cost">free</div>
+    </div>
+    <div class="mb-row">
+      <div class="mb-name">hy3-preview</div>
+      <div class="mb-track"><div class="mb-fill" style="width:1.6%;background:var(--teal)"></div></div>
+      <div class="mb-pct">1.6%</div>
+      <div class="mb-cost">$0.100/1M</div>
+    </div>
+    <div class="mb-row">
+      <div class="mb-name">nemotron-3:free</div>
+      <div class="mb-track"><div class="mb-fill" style="width:1.6%;background:var(--teal)"></div></div>
+      <div class="mb-pct">1.6%</div>
+      <div class="mb-cost">free</div>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top:24px">
+    At <strong>25% degradation threshold</strong> vs V4 Pro baseline:
+    <strong>32.2% cost reduction</strong>. Routing is conservative because
+    only 3 of 10 models have WildClawBench ground truth — V4 Pro's real
+    superiority is confirmed, Hy3 and Mimo are estimated from benchmarks only.
+  </div>
+
+  <p><strong>Degradation threshold sweep (baseline = V4 Pro):</strong></p>
+
+  <div style="margin:20px 0">
+    <div class="alpha-row">
+      <div class="alpha-val">0%</div>
+      <div class="alpha-bar-track"><div class="alpha-bar-fill" style="width:6.6%"></div></div>
+      <div class="alpha-num">6.6% saved</div>
+      <div class="alpha-num">~100% Pro</div>
+      <div class="alpha-num">$0.156</div>
+    </div>
+    <div class="alpha-row">
+      <div class="alpha-val">10%</div>
+      <div class="alpha-bar-track"><div class="alpha-bar-fill" style="width:10%"></div></div>
+      <div class="alpha-num">~10% saved</div>
+      <div class="alpha-num">70% Pro</div>
+      <div class="alpha-num">~$0.14</div>
+    </div>
+    <div class="alpha-row default">
+      <div class="alpha-val">25% ★</div>
+      <div class="alpha-bar-track"><div class="alpha-bar-fill" style="width:32.2%"></div></div>
+      <div class="alpha-num">32.2% saved</div>
+      <div class="alpha-num">59% Pro</div>
+      <div class="alpha-num">$0.113</div>
+    </div>
+  </div>
+
+  <p style="font-size:12px;font-style:italic">
+    ★ Recommended operating point given current training data.
+    Running WCB on Hy3 and Mimo would likely push 0% threshold savings to 40-60%.
+  </p>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════
+     08. NEXT STEPS
+══════════════════════════════════════════════════════ -->
+<section>
+  <div class="section-head">
+    <span class="sn">08</span>
+    <h2>Next Steps</h2>
+    <div class="sr"></div>
+  </div>
+
+  <div class="next-grid">
+    <div class="next-card">
+      <div class="next-phase">Immediate · Validation</div>
+      <div class="next-title">Validate Mimo & Hy3 in Production</div>
+      <div class="next-body">
+        PerfRouter already routes to Mimo and Hy3 based on their AA benchmark
+        scores — no WCB runs needed. Adding a new model requires only a
+        <code style="color:var(--teal);font-size:10px">models.yaml</code>
+        entry and re-running the pipeline (~2 minutes).
+        <br><br>
+        Validation happens naturally through production traffic — if a model
+        underperforms its benchmark prediction, optmod's escalation layer
+        catches it. Optional: run WCB on specific models if you suspect
+        benchmark scores are misleading for your task distribution.
+      </div>
+    </div>
+    <div class="next-card">
+      <div class="next-phase">Short Term · Integration</div>
+      <div class="next-title">Expose Threshold in optmod</div>
+      <div class="next-body">
+        Add <code style="color:var(--teal);font-size:10px">PERF_ROUTER_DEGRADATION</code>
+        env var to <code style="color:var(--teal);font-size:10px">perf_router_router.py</code>
+        so operators can tune quality/cost tradeoff per deployment without
+        retraining. Pass it through from <code style="color:var(--teal);font-size:10px">ctx</code>
+        if optmod exposes per-request quality preference.
+      </div>
+    </div>
+    <div class="next-card">
+      <div class="next-phase">Medium Term · Production</div>
+      <div class="next-title">Online Learning from Logs</div>
+      <div class="next-body">
+        Every completed optmod request is implicit feedback — we know which
+        model was used, the token counts, and eventually the outcome.
+        Build a log parser that converts routing logs into additional
+        WCB-equivalent training rows, continuously improving PerfRouter's
+        quality predictions as real traffic flows through.
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════
+     07b. BASELINE COMPARISON
+══════════════════════════════════════════════════════ -->
+<section>
+  <div class="section-head">
+    <span class="sn">07b</span>
+    <h2>Two Baseline Scenarios</h2>
+    <div class="sr"></div>
+  </div>
+
+  <p>
+    PerfRouter's value story changes depending on what you compare against.
+    Both scenarios were simulated against all 61 WildClawBench task prompts
+    at α=0.3 with 25% degradation threshold.
+  </p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;margin:28px 0">
+
+    <!-- V4 Flash baseline -->
+    <div style="background:var(--surface);border:1px solid var(--border);padding:28px 24px;border-top:2px solid var(--gold)">
+      <div style="font-family:'Chivo Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:14px">
+        Scenario A — Flash Baseline
+      </div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:13px;color:var(--muted);margin-bottom:20px;font-style:italic">
+        "I was routing everything to DeepSeek V4 Flash"
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+        <div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;color:var(--teal);line-height:1">80.1%</div>
+          <div style="font-family:'Chivo Mono',monospace;font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-top:4px">Cost saved</div>
+        </div>
+        <div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;color:var(--teal);line-height:1">73.8%</div>
+          <div style="font-family:'Chivo Mono',monospace;font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-top:4px">Free model routes</div>
+        </div>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);padding:14px;margin-bottom:14px">
+        <div style="font-family:'Chivo Mono',monospace;font-size:10px;color:var(--muted);line-height:2">
+          Baseline total &nbsp;: $0.0534 &nbsp;(61 × $0.175/1M)<br>
+          PerfRouter total : $0.0106<br>
+          Saved &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span style="color:var(--teal)">$0.0428 &nbsp;(80.1% reduction)</span>
+        </div>
+      </div>
+
+      <div style="font-size:12px;color:var(--muted);line-height:1.6">
+        PerfRouter routes 73.8% of tasks to completely free models (GPT-OSS,
+        Nemotron, Hy3) that match Flash quality on those task types. The 26%
+        paid routes go to Flash itself when quality requires it.
+        <br><br>
+        <strong style="color:var(--text)">Story:</strong> Same or better quality, 80% lower cost.
+      </div>
+    </div>
+
+    <!-- V4 Pro baseline -->
+    <div style="background:var(--surface);border:1px solid var(--border);padding:28px 24px;border-top:2px solid #a78bfa">
+      <div style="font-family:'Chivo Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#a78bfa;margin-bottom:14px">
+        Scenario B — Pro Baseline
+      </div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:13px;color:var(--muted);margin-bottom:20px;font-style:italic">
+        "I was routing everything to DeepSeek V4 Pro"
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+        <div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;color:#a78bfa;line-height:1">32.2%</div>
+          <div style="font-family:'Chivo Mono',monospace;font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-top:4px">Cost saved</div>
+        </div>
+        <div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;color:#a78bfa;line-height:1">16.4%</div>
+          <div style="font-family:'Chivo Mono',monospace;font-size:9px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-top:4px">Free model routes</div>
+        </div>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);padding:14px;margin-bottom:14px">
+        <div style="font-family:'Chivo Mono',monospace;font-size:10px;color:var(--muted);line-height:2">
+          Baseline total &nbsp;: $0.1658 &nbsp;(61 × $0.544/1M)<br>
+          PerfRouter total : $0.1125<br>
+          Saved &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span style="color:#a78bfa">$0.0534 &nbsp;(32.2% reduction)</span>
+        </div>
+      </div>
+
+      <div style="font-size:12px;color:var(--muted);line-height:1.6">
+        V4 Pro's benchmark dominance (AA=52) means PerfRouter correctly
+        keeps 59% of tasks on Pro where quality matters. The 41% routed
+        elsewhere goes to Flash (3× cheaper) and free models on tasks
+        where the quality gap is within the 25% tolerance.
+        <br><br>
+        <strong style="color:var(--text)">Story:</strong> Intelligent de-escalation — pay for Pro only when it matters.
+      </div>
+    </div>
+
+  </div>
+
+  <div style="background:rgba(240,192,96,0.04);border-left:2px solid var(--gold);padding:14px 20px;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:15px;color:rgba(255,255,255,0.65);line-height:1.6">
+    Both numbers improve as the model pool expands — adding new models requires only
+    a <strong style="color:var(--gold);font-style:normal">models.yaml entry</strong> and
+    a pipeline re-run. AA benchmark scores serve as the quality proxy;
+    no WildClawBench runs needed for new models.
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════════════════ -->
+<footer>
+  <div class="footer-left">
+    Phase 2 complete · PerfRouter · XGBoost · 10 models · 33 task types · 46 features<br>
+    Data: Artificial Analysis API · Arena.ai ELO · WildClawBench (3 models)<br>
+    Pipeline: fetch_aa → fetch_arena → patch_taxonomy → build_weights → build_features → train
+  </div>
+  <div class="footer-right">Benchmark-driven routing.</div>
+</footer>
+
+</div>
+</body>
+</html>

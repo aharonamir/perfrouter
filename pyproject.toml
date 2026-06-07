@@ -1,0 +1,24 @@
+[project]
+name = "perfrouter"
+version = "0.1.0"
+description = "Benchmark-driven LLM routing using XGBoost and sentence-BERT"
+requires-python = ">=3.11"
+dependencies = [
+    "xgboost>=2.0",
+    "scikit-learn",
+    "sentence-transformers",
+    "numpy",
+    "pandas",
+    "pyyaml",
+    "requests",
+    "openai",
+]
+
+[project.scripts]
+perf-pipeline  = "perfrouter.pipeline.run_perf_router_pipeline:main"
+perf-simulate  = "perfrouter.tools.simulate_perf_router_wcb:main"
+perf-inference = "perfrouter.inference.perf_router_inference:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

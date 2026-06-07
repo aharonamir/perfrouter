@@ -1,0 +1,9 @@
+.env
+*.pkl
+data/wcb_training_labeled.csv
+models/
+__pycache__/
+.venv/
+*.pyc
+.DS_Store
+dist/

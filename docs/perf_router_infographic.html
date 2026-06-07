@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PerfRouter — How It Works</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #0d0f14;
+  font-family: 'IBM Plex Mono', monospace;
+  padding: 48px;
+  min-height: 100vh;
+}
+
+.canvas {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* ── Title ── */
+.title-block {
+  margin-bottom: 48px;
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+}
+.title-main {
+  font-family: 'Fraunces', serif;
+  font-size: 52px;
+  font-weight: 300;
+  color: #f5f0e4;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.title-main em {
+  font-style: italic;
+  color: #e8b84b;
+}
+.title-sub {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(245,240,228,0.35);
+  line-height: 1.8;
+}
+
+/* ── Zone headers ── */
+.zone-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.zone-pill {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 2px;
+  font-weight: 500;
+}
+.zone-pill.offline { background: rgba(62,200,178,0.12); color: #3ec8b2; border: 1px solid rgba(62,200,178,0.25); }
+.zone-pill.runtime { background: rgba(232,184,75,0.12); color: #e8b84b; border: 1px solid rgba(232,184,75,0.25); }
+.zone-line { flex: 1; height: 1px; background: rgba(255,255,255,0.06); }
+
+/* ── Offline zone ── */
+.offline-zone {
+  border: 1px solid rgba(62,200,178,0.15);
+  border-radius: 12px;
+  padding: 28px;
+  margin-bottom: 32px;
+  background: rgba(62,200,178,0.02);
+}
+
+/* Pipeline row */
+.pipeline {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 28px;
+}
+.pipe-step {
+  flex: 1;
+  background: #161a22;
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 14px 12px;
+  position: relative;
+}
+.pipe-step:first-child { border-radius: 8px 0 0 8px; }
+.pipe-step:last-child  { border-radius: 0 8px 8px 0; }
+.pipe-step::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+}
+.pipe-step.gray::before  { background: rgba(255,255,255,0.15); }
+.pipe-step.teal::before  { background: #3ec8b2; }
+.pipe-step.amber::before { background: #e8b84b; }
+.pipe-step.purple::before { background: #a78bfa; }
+
+.pipe-arrow {
+  width: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.2);
+  font-size: 12px;
+}
+.pipe-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(245,240,228,0.85);
+  margin-bottom: 3px;
+  white-space: nowrap;
+}
+.pipe-desc {
+  font-size: 9px;
+  color: rgba(245,240,228,0.35);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* Feature vector */
+.feature-vector {
+  background: rgba(167,139,250,0.06);
+  border: 1px solid rgba(167,139,250,0.2);
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+.fv-title {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(167,139,250,0.7);
+  margin-bottom: 14px;
+  text-align: center;
+}
+.fv-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.fv-group {
+  background: #161a22;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px;
+  padding: 14px;
+  text-align: center;
+}
+.fv-count {
+  font-family: 'Fraunces', serif;
+  font-size: 36px;
+  font-weight: 300;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.fv-count.teal   { color: #3ec8b2; }
+.fv-count.gray   { color: rgba(245,240,228,0.5); }
+.fv-count.amber  { color: #e8b84b; }
+.fv-count.purple { color: #a78bfa; }
+.fv-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(245,240,228,0.8);
+  margin-bottom: 4px;
+  letter-spacing: 0.05em;
+}
+.fv-detail {
+  font-size: 9px;
+  color: rgba(245,240,228,0.35);
+  line-height: 1.6;
+  letter-spacing: 0.03em;
+}
+.fv-note {
+  text-align: center;
+  font-size: 9px;
+  color: rgba(245,240,228,0.25);
+  margin-top: 12px;
+  letter-spacing: 0.06em;
+}
+
+/* ── Runtime zone ── */
+.runtime-zone {
+  border: 1px solid rgba(232,184,75,0.15);
+  border-radius: 12px;
+  padding: 28px;
+  background: rgba(232,184,75,0.02);
+}
+
+/* Flow column */
+.flow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.flow-node {
+  width: 100%;
+  max-width: 620px;
+  border-radius: 8px;
+  padding: 16px 22px;
+  position: relative;
+}
+.flow-node.prompt {
+  background: #161a22;
+  border: 1px solid rgba(255,255,255,0.1);
+  text-align: center;
+}
+.flow-node.comp-a {
+  background: rgba(62,200,178,0.07);
+  border: 1px solid rgba(62,200,178,0.25);
+}
+.flow-node.comp-b {
+  background: rgba(167,139,250,0.07);
+  border: 1px solid rgba(167,139,250,0.25);
+}
+.flow-node.formula {
+  background: rgba(232,184,75,0.07);
+  border: 1px solid rgba(232,184,75,0.25);
+}
+.flow-node.result {
+  background: rgba(62,200,178,0.1);
+  border: 2px solid rgba(62,200,178,0.4);
+  text-align: center;
+}
+
+.comp-tag {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.comp-tag.teal   { color: rgba(62,200,178,0.7); }
+.comp-tag.purple { color: rgba(167,139,250,0.7); }
+.comp-tag.amber  { color: rgba(232,184,75,0.7); }
+.comp-tag.teal-strong { color: #3ec8b2; }
+
+.comp-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(245,240,228,0.9);
+  margin-bottom: 4px;
+}
+.comp-desc {
+  font-size: 10px;
+  color: rgba(245,240,228,0.4);
+  line-height: 1.7;
+  letter-spacing: 0.03em;
+}
+
+.flow-arrow {
+  width: 1px;
+  height: 24px;
+  background: rgba(255,255,255,0.12);
+  position: relative;
+  flex-shrink: 0;
+}
+.flow-arrow::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: -4px;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 6px solid rgba(255,255,255,0.2);
+}
+
+/* Filters row */
+.filters-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 620px;
+  margin: 0;
+}
+.filter-box {
+  flex: 1;
+  background: rgba(224,90,90,0.07);
+  border: 1px solid rgba(224,90,90,0.2);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+}
+.filter-name {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(224,90,90,0.85);
+  margin-bottom: 3px;
+}
+.filter-detail {
+  font-size: 9px;
+  color: rgba(245,240,228,0.3);
+  letter-spacing: 0.03em;
+}
+.filters-label {
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(245,240,228,0.2);
+  text-align: center;
+  padding: 6px 0 4px;
+}
+
+/* Formula modes */
+.formula-modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+.formula-mode {
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(232,184,75,0.12);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+.mode-label {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(232,184,75,0.5);
+  margin-bottom: 5px;
+}
+.mode-formula {
+  font-size: 10px;
+  color: rgba(232,184,75,0.85);
+  line-height: 1.7;
+}
+
+/* Result box */
+.result-title {
+  font-family: 'Fraunces', serif;
+  font-size: 20px;
+  font-weight: 300;
+  color: #3ec8b2;
+  margin-bottom: 4px;
+}
+.result-meta {
+  font-size: 10px;
+  color: rgba(62,200,178,0.5);
+  letter-spacing: 0.08em;
+}
+
+/* Footer note */
+.footer-note {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(245,240,228,0.18);
+}
+</style>
+</head>
+<body>
+<div class="canvas">
+
+  <!-- Title -->
+  <div class="title-block">
+    <div>
+      <div class="title-main">Perf<em>Router</em></div>
+    </div>
+    <div class="title-sub">
+      Benchmark-driven<br>model routing<br>— how it works
+    </div>
+  </div>
+
+  <!-- ── OFFLINE ZONE ── -->
+  <div class="zone-header">
+    <div class="zone-pill offline">Offline — build once</div>
+    <div class="zone-line"></div>
+  </div>
+
+  <div class="offline-zone">
+
+    <!-- Pipeline -->
+    <div class="pipeline">
+      <div class="pipe-step gray">
+        <div class="pipe-name">models.yaml</div>
+        <div class="pipe-desc">10 models · specs</div>
+      </div>
+      <div class="pipe-arrow">›</div>
+      <div class="pipe-step teal">
+        <div class="pipe-name">AA API</div>
+        <div class="pipe-desc">14 benchmarks</div>
+      </div>
+      <div class="pipe-arrow">›</div>
+      <div class="pipe-step teal">
+        <div class="pipe-name">Arena ELO</div>
+        <div class="pipe-desc">5 categories</div>
+      </div>
+      <div class="pipe-arrow">›</div>
+      <div class="pipe-step amber">
+        <div class="pipe-name">WCB seed</div>
+        <div class="pipe-desc">3 models · real</div>
+      </div>
+      <div class="pipe-arrow">›</div>
+      <div class="pipe-step purple">
+        <div class="pipe-name">XGBoost train</div>
+        <div class="pipe-desc">perf_router.pkl</div>
+      </div>
+    </div>
+
+    <!-- Feature vector -->
+    <div class="feature-vector">
+      <div class="fv-title">46-feature model vector — one row per model in pool</div>
+      <div class="fv-grid">
+        <div class="fv-group">
+          <div class="fv-count teal">33</div>
+          <div class="fv-label">Task affinities</div>
+          <div class="fv-detail">Weighted avg of<br>benchmark scores<br>per task type</div>
+        </div>
+        <div class="fv-group">
+          <div class="fv-count gray">9</div>
+          <div class="fv-label">Structural</div>
+          <div class="fv-detail">params_B, context,<br>speed_tps,<br>latency_ttft</div>
+        </div>
+        <div class="fv-group">
+          <div class="fv-count gray">5</div>
+          <div class="fv-label">Flags</div>
+          <div class="fv-detail">vision, reasoning,<br>thinking, tools,<br>free tier (0/1)</div>
+        </div>
+        <div class="fv-group">
+          <div class="fv-count amber">3</div>
+          <div class="fv-label">WCB seed</div>
+          <div class="fv-detail">Real benchmark<br>scores · weight ×3<br>NaN if not run</div>
+        </div>
+      </div>
+      <div class="fv-note">pricing excluded from XGBoost — applied at inference time from models.yaml</div>
+    </div>
+
+  </div>
+
+  <!-- ── RUNTIME ZONE ── -->
+  <div class="zone-header">
+    <div class="zone-pill runtime">At routing time — per request · &lt;5ms</div>
+    <div class="zone-line"></div>
+  </div>
+
+  <div class="runtime-zone">
+    <div class="flow">
+
+      <!-- Incoming prompt -->
+      <div class="flow-node prompt">
+        <div class="comp-tag teal-strong" style="text-align:center">Input</div>
+        <div class="comp-title" style="text-align:center">Incoming user message</div>
+      </div>
+
+      <div class="flow-arrow"></div>
+
+      <!-- Component A -->
+      <div class="flow-node comp-a">
+        <div class="comp-tag teal">Component A — Task Classifier</div>
+        <div class="comp-title">sentence-BERT cosine similarity</div>
+        <div class="comp-desc">Encodes prompt → 384-dim vector · cosine similarity against 33 pre-computed task type embeddings · returns top-3 task types with similarity weights · no LLM call · ~2ms</div>
+      </div>
+
+      <div class="flow-arrow"></div>
+
+      <!-- Component B -->
+      <div class="flow-node comp-b">
+        <div class="comp-tag purple">Component B — Quality Predictor</div>
+        <div class="comp-title">XGBoost predicts quality per model</div>
+        <div class="comp-desc">For each model: inject active task-type affinity into feature vector · mask all other affinity columns to NaN · XGBoost predicts quality score 0–1 · weighted average over top-3 task types</div>
+      </div>
+
+      <div class="flow-arrow"></div>
+
+      <!-- Filters label -->
+      <div class="filters-label">eligibility filters — applied before selection</div>
+
+      <!-- 3 filters -->
+      <div class="filters-row">
+        <div class="filter-box">
+          <div class="filter-name">Context window</div>
+          <div class="filter-detail">effective_context_k × 1000<br>&gt; request token_count</div>
+        </div>
+        <div class="filter-box">
+          <div class="filter-name">Vision capability</div>
+          <div class="filter-detail">has_images=True requires<br>supports_vision=True</div>
+        </div>
+        <div class="filter-box">
+          <div class="filter-name">Cost cap</div>
+          <div class="filter-detail">model cost ≤ 2×<br>baseline cost</div>
+        </div>
+      </div>
+
+      <div class="flow-arrow"></div>
+
+      <!-- Component C / formula -->
+      <div class="flow-node formula">
+        <div class="comp-tag amber">Component C — Routing Decision</div>
+        <div class="comp-title">Cost-adjusted selection among eligible models</div>
+        <div class="formula-modes">
+          <div class="formula-mode">
+            <div class="mode-label">Standard mode (default)</div>
+            <div class="mode-formula">chosen = argmax(<br>&nbsp;&nbsp;quality − α × norm_cost<br>)</div>
+          </div>
+          <div class="formula-mode">
+            <div class="mode-label">Degradation threshold mode</div>
+            <div class="mode-formula">floor = best × (1 − threshold)<br>band = models where quality ≥ floor<br>chosen = cheapest(band)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow-arrow"></div>
+
+      <!-- Result -->
+      <div class="flow-node result">
+        <div class="result-title">Chosen model</div>
+        <div class="result-meta">runtime pricing from models.yaml · α and threshold configurable without retraining</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footer-note">
+    PerfRouter · XGBoost · 10 models · 33 task types · 46 features · AA API + Arena ELO + WCB seed
+  </div>
+
+</div>
+</body>
+</html>
