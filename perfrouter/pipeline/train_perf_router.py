@@ -102,15 +102,7 @@ EXCLUDE_FROM_FEATURES = {
     "price_cache_read_per_1M",
 }
 
-# WCB models — these rows get higher sample weight during training
-# WCB models identified by normalised ID (no prefix, no :free suffix)
-WCB_MODELS_NORM = {
-    "deepseek_v4_flash",
-    "deepseek_v4_pro",
-    "gpt_oss_120b",
-}
-
-WCB_SAMPLE_WEIGHT  = 3.0   # WCB rows are more reliable
+WCB_SAMPLE_WEIGHT  = 3.0   # rows with actual WCB ground-truth labels
 BASE_SAMPLE_WEIGHT = 1.0   # benchmark-derived rows
 
 
@@ -213,9 +205,10 @@ def build_training_data(
                 else:
                     x_row.append(val)
 
-            # Sample weight — WCB rows are more reliable
-            is_wcb_model = _normalise_model_id(model_id) in WCB_MODELS_NORM
-            weight = WCB_SAMPLE_WEIGHT if (has_wcb or is_wcb_model) else BASE_SAMPLE_WEIGHT
+            # Only upweight rows that have actual WCB ground-truth labels.
+            # Upweighting benchmark-derived rows for "known WCB models" when
+            # the CSV is absent would unjustifiably favour those 3 models.
+            weight = WCB_SAMPLE_WEIGHT if has_wcb else BASE_SAMPLE_WEIGHT
 
             X.append(x_row)
             y.append(utility)
@@ -439,11 +432,14 @@ def main():
     print(f"  {len(X)} training rows")
     print(f"  {feature_cols[:5]}... ({len(feature_cols)} features total)")
 
-    # WCB vs benchmark breakdown
+    # WCB vs benchmark breakdown — counts by label source, not by weight
     wcb_rows   = sum(1 for w in weights if w == WCB_SAMPLE_WEIGHT)
     bench_rows = len(weights) - wcb_rows
-    print(f"  WCB ground-truth rows : {wcb_rows} (weight={WCB_SAMPLE_WEIGHT})")
-    print(f"  Benchmark-derived rows: {bench_rows} (weight={BASE_SAMPLE_WEIGHT})")
+    if wcb_rows:
+        print(f"  WCB ground-truth rows : {wcb_rows} (weight={WCB_SAMPLE_WEIGHT})")
+        print(f"  Benchmark-derived rows: {bench_rows} (weight={BASE_SAMPLE_WEIGHT})")
+    else:
+        print(f"  Benchmark-derived rows: {bench_rows} (weight={BASE_SAMPLE_WEIGHT}, no WCB seed)")
 
     if len(X) < 10:
         print("ERROR: Too few training rows. Check feature CSV.", file=sys.stderr)
