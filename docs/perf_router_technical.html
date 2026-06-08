@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PerfRouter — Technical Reference</title>
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+  options: { skipHtmlTags: ['script','noscript','style','textarea'] }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<style>
+  :root {
+    --bg:       #0f1117;
+    --surface:  #1a1d27;
+    --card:     #20232f;
+    --border:   #2e3147;
+    --accent:   #6c8ef5;
+    --accent2:  #a78bfa;
+    --green:    #4ade80;
+    --yellow:   #fbbf24;
+    --red:      #f87171;
+    --text:     #e2e8f0;
+    --muted:    #8892a4;
+    --code-bg:  #12151e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    padding: 0 0 80px;
+  }
+
+  /* ── Header ── */
+  header {
+    background: linear-gradient(135deg, #1a1d27 0%, #12151e 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 64px 40px;
+  }
+  header h1 { font-size: 2rem; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+  header h1 span { color: var(--accent); }
+  header p { color: var(--muted); margin-top: 8px; font-size: 1rem; max-width: 640px; }
+  .tag {
+    display: inline-block;
+    background: #2a2d40;
+    border: 1px solid var(--border);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin: 16px 4px 0 0;
+  }
+
+  /* ── Layout ── */
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 48px; }
+
+  /* ── TOC ── */
+  nav {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px 28px;
+    margin: 40px 0;
+  }
+  nav h3 { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  nav ol { padding-left: 20px; }
+  nav li { margin: 5px 0; }
+  nav a { color: var(--accent); text-decoration: none; font-size: 14px; }
+  nav a:hover { text-decoration: underline; }
+
+  /* ── Sections ── */
+  section { margin: 56px 0; }
+  section h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #fff;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  section h2 .num {
+    background: var(--accent);
+    color: #0f1117;
+    font-size: 12px;
+    font-weight: 700;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  h3 { font-size: 1rem; font-weight: 600; color: var(--accent2); margin: 28px 0 10px; }
+  p { margin-bottom: 12px; color: var(--text); }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 16px 0;
+  }
+  .card.highlight { border-color: var(--accent); background: #181b2a; }
+
+  /* ── Formula boxes ── */
+  .formula {
+    background: var(--code-bg);
+    border: 1px solid #2e3147;
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 18px 24px;
+    margin: 16px 0;
+    overflow-x: auto;
+    font-size: 1.05em;
+  }
+  .formula .label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  /* ── Code ── */
+  code {
+    background: var(--code-bg);
+    color: #93c5fd;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 13px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 16px 0;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+  pre .c  { color: #4a5568; }
+  pre .k  { color: #a78bfa; }
+  pre .s  { color: #6ee7b7; }
+  pre .n  { color: #93c5fd; }
+  pre .num { color: #fbbf24; }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+  th {
+    background: #1e2130;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid #1e2130; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #1e2130; }
+  td code { font-size: 12px; }
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .pill.a { background: #1e3a5f; color: #60a5fa; }
+  .pill.b { background: #1e3a2f; color: #4ade80; }
+  .pill.c { background: #3a2a1e; color: #fbbf24; }
+  .pill.d { background: #3a1e2f; color: #c084fc; }
+
+  /* ── Pipeline diagram ── */
+  .pipeline {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin: 24px 0;
+    overflow-x: auto;
+  }
+  .step {
+    flex: 1;
+    min-width: 120px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 16px 14px;
+    text-align: center;
+    position: relative;
+  }
+  .step:first-child { border-radius: 8px 0 0 8px; }
+  .step:last-child  { border-radius: 0 8px 8px 0; }
+  .step::after {
+    content: '→';
+    position: absolute;
+    right: -14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 18px;
+    z-index: 1;
+  }
+  .step:last-child::after { display: none; }
+  .step .snum {
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .step .sname { font-size: 12px; font-weight: 600; color: #fff; margin: 4px 0; }
+  .step .sout  { font-size: 11px; color: var(--muted); }
+
+  /* ── Feature group grid ── */
+  .feat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+  }
+  .feat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+  }
+  .feat-card .group-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .feat-card ul { list-style: none; }
+  .feat-card li { font-size: 13px; color: var(--muted); padding: 2px 0; }
+  .feat-card li::before { content: '·  '; color: var(--accent); }
+
+  /* ── Callout ── */
+  .callout {
+    background: #181f2e;
+    border: 1px solid #2a3a5e;
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 14px;
+    color: #93c5fd;
+  }
+  .callout.warn { border-left-color: var(--yellow); background: #1e1a10; color: var(--yellow); }
+  .callout strong { color: #fff; }
+
+  /* ── Routing modes ── */
+  .mode-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin: 16px 0; }
+  .mode-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .mode-card .mode-title { font-weight: 700; font-size: 13px; margin-bottom: 6px; color: #fff; }
+  .mode-card .mode-cond  { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .mode-card .mode-action { font-size: 12px; color: var(--text); }
+
+  /* ── Two-col ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+  @media(max-width:700px) { .two-col,.mode-grid { grid-template-columns:1fr; } }
+
+  /* ── Divider ── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 48px 0; }
+
+  /* ── Scroll anchor offset ── */
+  [id] { scroll-margin-top: 24px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>Perf<span>Router</span> — Technical Reference</h1>
+    <p>Benchmark-driven LLM routing using XGBoost and sentence-BERT.
+       Routes incoming queries to the model with the highest predicted utility
+       (quality − α × cost) with no LLM call at inference time.</p>
+    <span class="tag">XGBoost</span>
+    <span class="tag">sentence-BERT</span>
+    <span class="tag">10 models</span>
+    <span class="tag">33 task types</span>
+    <span class="tag">46 features</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <nav>
+    <h3>Contents</h3>
+    <ol>
+      <li><a href="#overview">System overview</a></li>
+      <li><a href="#pipeline">Build pipeline (6 steps)</a></li>
+      <li><a href="#features">Feature vector (46 features)</a></li>
+      <li><a href="#affinity">Affinity score formula</a></li>
+      <li><a href="#training">XGBoost training</a></li>
+      <li><a href="#inference">Inference &amp; routing</a></li>
+      <li><a href="#config">Runtime configuration</a></li>
+    </ol>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════════════ 1. OVERVIEW -->
+  <section id="overview">
+    <h2><span class="num">1</span>System overview</h2>
+
+    <p>PerfRouter answers the question: <em>"Given this query, which model in
+    the pool has the best predicted quality adjusted for cost?"</em></p>
+
+    <p>It differs from embedding-based routers (TRouter) in that it does not
+    route on query semantics alone. Instead it:</p>
+    <ol style="padding-left:24px;margin-bottom:12px">
+      <li style="margin:4px 0">Classifies the query into one of 33 task types using cosine similarity against pre-computed sentence-BERT embeddings — no LLM call.</li>
+      <li style="margin:4px 0">For each model, predicts its quality on that task type using XGBoost — trained on benchmark-derived feature vectors and optional WCB ground truth.</li>
+      <li style="margin:4px 0">Applies a cost penalty: $ \hat{u}_m = \hat{q}_m - \alpha \cdot \tilde{c}_m $ and routes to the model with the highest adjusted utility.</li>
+    </ol>
+
+    <div class="two-col">
+      <div class="card">
+        <h3 style="margin-top:0">Why not a neural router?</h3>
+        <p style="margin:0;font-size:14px">With 10 models × 33 task types = 330 training rows, a neural network would overfit badly. XGBoost handles small datasets naturally via built-in L1/L2 regularisation, deals with missing features natively (NaN), and produces feature importances for interpretability.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">Why sentence-BERT for classification?</h3>
+        <p style="margin:0;font-size:14px">The 33 task type definitions are embedded once at startup. At inference time, a single dot product against pre-normalised embeddings gives cosine similarity in ~1 ms — no API call, no latency overhead, no cost.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════ 2. PIPELINE -->
+  <section id="pipeline">
+    <h2><span class="num">2</span>Build pipeline</h2>
+
+    <p>Run with <code>uv run perf-pipeline --force</code>. Each step is
+    idempotent and skips if its output already exists.</p>
+
+    <div class="pipeline">
+      <div class="step">
+        <div class="snum">Step 1</div>
+        <div class="sname">fetch_aa_data</div>
+        <div class="sout">model_registry.json</div>
+      </div>
+      <div class="step">
+        <div class="snum">Step 2</div>
+        <div class="sname">fetch_arena_data</div>
+        <div class="sout">+ Arena ELO</div>
+      </div>
+      <div class="step">
+        <div class="snum">Step 3</div>
+        <div class="sname">patch_taxonomy</div>
+        <div class="sout">task_taxonomy.json</div>
+      </div>
+      <div class="step">
+        <div class="snum">Step 4</div>
+        <div class="sname">build_weights</div>
+        <div class="sout">benchmark_weights.json</div>
+      </div>
+      <div class="step">
+        <div class="snum">Step 5</div>
+        <div class="sname">build_features</div>
+        <div class="sout">model_features.csv</div>
+      </div>
+      <div class="step">
+        <div class="snum">Step 6</div>
+        <div class="sname">train</div>
+        <div class="sout">perf_router.pkl</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Step</th><th>Script</th><th>Input</th><th>Output</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td><code>fetch_aa_data.py</code></td>
+          <td><code>models.yaml</code></td>
+          <td><code>model_registry.json</code></td>
+          <td>Calls Artificial Analysis API v2. Fetches intelligence index, benchmark scores, speed, latency, cost. Rate-limited: 1 000 req/day on free tier.</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td><code>fetch_arena_data.py</code></td>
+          <td><code>model_registry.json</code></td>
+          <td><code>model_registry.json</code> (updated)</td>
+          <td>Fetches wulong.dev Arena ELO leaderboard for 5 categories (text, search, code, vision, document). Normalises raw ELO to [0, 1] via min-max per category. Fills gaps where AA benchmarks have no coverage (creative writing, conversation, retrieval).</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td><code>patch_taxonomy_arena.py</code></td>
+          <td><code>task_taxonomy.json</code></td>
+          <td><code>task_taxonomy.json</code> (updated)</td>
+          <td>Hard-codes Arena ELO as the primary benchmark weight for subjective task types: <code>social.*</code>, <code>synthesis.creative_*</code>, <code>retrieval.web_search</code>.</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td><code>build_benchmark_weights.py</code></td>
+          <td><code>task_taxonomy.json</code></td>
+          <td><code>benchmark_weights.json</code></td>
+          <td>Extracts the weight matrix $W \in \mathbb{R}^{|\mathcal{T}| \times |\mathcal{B}|}$ from the taxonomy. Rows = task types, columns = benchmarks.</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td><code>build_model_features.py</code></td>
+          <td>registry + weights</td>
+          <td><code>model_features.csv</code></td>
+          <td>Computes the 46-feature vector for each model (see §3).</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td><code>train_perf_router.py</code></td>
+          <td><code>model_features.csv</code></td>
+          <td><code>perf_router.pkl</code></td>
+          <td>Trains a single XGBoost regressor over all (model, task type) pairs. Serialises model + metadata.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════ 3. FEATURES -->
+  <section id="features">
+    <h2><span class="num">3</span>Feature vector — 46 features per model</h2>
+
+    <p>Each row in <code>model_features.csv</code> represents one model.
+    The feature vector has four groups:</p>
+
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="group-label" style="color:#60a5fa">A — Task-type affinity  <span style="color:var(--muted);font-weight:400">(33)</span></div>
+        <ul>
+          <li>One score per task type</li>
+          <li>Weighted avg of benchmark scores</li>
+          <li>NaN if no benchmark data</li>
+          <li>Only one column active per training row</li>
+        </ul>
+      </div>
+      <div class="feat-card">
+        <div class="group-label" style="color:#4ade80">B — Structural  <span style="color:var(--muted);font-weight:400">(9)</span></div>
+        <ul>
+          <li>total_params_B</li>
+          <li>active_params_B</li>
+          <li>moe_density</li>
+          <li>context_window_k</li>
+          <li>effective_context_k</li>
+          <li>context_headroom_ratio</li>
+          <li>speed_output_tps</li>
+          <li>latency_ttft_s</li>
+          <li>price_blended_per_1M *</li>
+        </ul>
+      </div>
+      <div class="feat-card">
+        <div class="group-label" style="color:#fbbf24">C — Boolean flags  <span style="color:var(--muted);font-weight:400">(5)</span></div>
+        <ul>
+          <li>flag_reasoning  (0/1)</li>
+          <li>flag_thinking   (0/1)</li>
+          <li>flag_vision     (0/1)</li>
+          <li>flag_tools      (0/1)</li>
+          <li>flag_free       (0/1)</li>
+        </ul>
+      </div>
+      <div class="feat-card">
+        <div class="group-label" style="color:#c084fc">D — WCB seed  <span style="color:var(--muted);font-weight:400">(3, optional)</span></div>
+        <ul>
+          <li>wcb_avg_score</li>
+          <li>wcb_avg_score_nonzero</li>
+          <li>wcb_zero_rate</li>
+          <li>NaN for models not run on WCB</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <strong>* Pricing excluded from XGBoost inputs.</strong>
+      <code>price_blended_per_1M</code> (and input/output/cache prices) are
+      listed in group B but are <em>excluded</em> from the XGBoost feature
+      matrix at training time. Cost is applied explicitly at inference as
+      $\hat{u}_m = \hat{q}_m - \alpha \cdot \tilde{c}_m$.
+      Including cost in XGBoost would cause it to double-count the cost signal.
+    </div>
+
+    <h3>Blended cost formula</h3>
+    <p>AA convention: 3 input tokens per 1 output token (3:1 ratio).</p>
+    <div class="formula">
+      <div class="label">Blended cost ($/1M tokens)</div>
+      $$c_m = \frac{3 \cdot p^{\text{in}}_m + p^{\text{out}}_m}{4}$$
+    </div>
+
+    <h3>MoE density</h3>
+    <div class="formula">
+      <div class="label">Mixture-of-Experts activation density</div>
+      $$\rho_m = \frac{\text{active\_params\_B}_m}{\text{total\_params\_B}_m}$$
+      <p style="margin-top:8px;font-size:13px;color:var(--muted)">
+        Dense models: $\rho = 1.0$. &ensp; MoE models: $\rho < 1.0$.
+        E.g. DeepSeek-V4-Pro: 49B active / 1600B total → $\rho = 0.031$.
+      </p>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════ 4. AFFINITY -->
+  <section id="affinity">
+    <h2><span class="num">4</span>Affinity score formula</h2>
+
+    <p>The affinity score $a_{m,t}$ measures how well model $m$ is suited to
+    task type $t$, derived entirely from AA and Arena benchmark scores.</p>
+
+    <div class="formula">
+      <div class="label">Task-type affinity score</div>
+      $$a_{m,t} = \frac{\displaystyle\sum_{b \in \mathcal{B}} w_{t,b} \cdot s_{m,b}}
+                       {\displaystyle\sum_{b \in \mathcal{B} \,:\, s_{m,b} \neq \text{null}} w_{t,b}}$$
+      <p style="margin-top:12px;font-size:13px;color:var(--muted)">
+        where $w_{t,b} \in W$ is the weight of benchmark $b$ for task type $t$,
+        and $s_{m,b}$ is the model's score on benchmark $b$.
+        The denominator re-normalises over benchmarks where the model has data,
+        so missing scores are skipped rather than treated as zero.
+      </p>
+    </div>
+
+    <h3>Benchmark score normalisation</h3>
+    <p>Scores are normalised to [0, 1] before the weighted sum:</p>
+    <div class="formula">
+      <div class="label">AA index normalisation</div>
+      $$\tilde{s}_{m,b} = \begin{cases}
+        s_{m,b} / 100 & \text{if } b \in \{\texttt{aa\_intelligence\_index, aa\_coding\_index, aa\_math\_index}\} \\
+        s_{m,b}       & \text{otherwise (already in } [0,1]\text{)}
+      \end{cases}$$
+    </div>
+
+    <h3>Arena ELO normalisation</h3>
+    <p>Raw ELO is on an arbitrary scale (~1000–1600). Per-category min-max
+    normalisation maps it to [0, 1] across the leaderboard:</p>
+    <div class="formula">
+      <div class="label">Arena ELO → [0, 1]</div>
+      $$\tilde{e}_{m,c} = \frac{\text{ELO}_{m,c} - \min_k \text{ELO}_{k,c}}
+                               {\max_k \text{ELO}_{k,c} - \min_k \text{ELO}_{k,c}}$$
+      <p style="margin-top:8px;font-size:13px;color:var(--muted)">
+        Categories: <em>text, search, code, vision, document</em>.
+        Computed separately per category. Used as the benchmark score for
+        task types that have no adequate AA coverage.
+      </p>
+    </div>
+
+    <h3>Benchmark weight matrix $W$</h3>
+    <p>$W \in \mathbb{R}^{33 \times |\mathcal{B}|}$ is generated by the LLM
+    in <code>build_task_taxonomy.py</code> and stored in
+    <code>benchmark_weights.json</code>. Each row sums to 1.0.
+    The Arena patch (Step 3) overwrites specific rows for subjective task types.</p>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════ 5. TRAINING -->
+  <section id="training">
+    <h2><span class="num">5</span>XGBoost training</h2>
+
+    <h3>Training data construction</h3>
+    <p>One training row per (model, task type) pair. For 10 models × 33 task
+    types = up to 330 rows. Rows where a model has no data for a task type are
+    dropped.</p>
+
+    <table>
+      <thead><tr><th>Source</th><th>Label $y$</th><th>Sample weight</th><th>Condition</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="pill a">WCB ground truth</span></td>
+          <td>Observed WCB <code>overall_score</code> on that task type</td>
+          <td>$w = 3.0$</td>
+          <td>Model was run on WildClawBench and has a score for this task type</td>
+        </tr>
+        <tr>
+          <td><span class="pill b">Benchmark-derived</span></td>
+          <td>Affinity score $a_{m,t}$ from benchmark features</td>
+          <td>$w = 1.0$</td>
+          <td>All other rows (no WCB ground truth)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <strong>WCB models (current):</strong>
+      <code>deepseek/deepseek-v4-flash</code>, <code>deepseek/deepseek-v4-pro</code>,
+      <code>openai/gpt-oss-120b:free</code>.
+      These models' rows receive $w = 3.0$ regardless of whether the specific
+      (model, task type) pair has a WCB score, so that their benchmark-derived
+      rows are also upweighted to maintain consistency.
+    </div>
+
+    <h3>Feature masking — making XGBoost task-type-aware</h3>
+    <p>This is the key design decision. A single XGBoost model is trained across
+    all 33 task types. Without intervention it would learn a global ranking
+    ("model X is always best") and ignore task-type variation.</p>
+
+    <p>The fix: for each training row, <strong>all affinity columns are masked
+    to NaN except the one corresponding to that row's task type</strong>:</p>
+
+    <div class="formula">
+      <div class="label">Feature masking per training row $(m, t)$</div>
+      $$x_{m,t}^{(b)} = \begin{cases}
+        a_{m,t}      & \text{if } b = \texttt{affinity\_}t \\
+        \text{NaN}   & \text{if } b \text{ is any other affinity column} \\
+        f_{m,b}      & \text{otherwise (structural / flag / WCB columns)}
+      \end{cases}$$
+      <p style="margin-top:10px;font-size:13px;color:var(--muted)">
+        XGBoost's <code>tree_method="hist"</code> handles NaN natively by
+        learning which branch direction minimises loss for missing values.
+        At inference time, the same masking is applied — only the active
+        task type's affinity column is populated.
+      </p>
+    </div>
+
+    <h3>Label normalisation (within task type)</h3>
+    <p>Without normalisation, XGBoost learns absolute quality scores and picks
+    the globally best model for everything. Per-task-type normalisation forces
+    it to learn <em>relative rankings within each task type</em>:</p>
+
+    <div class="formula">
+      <div class="label">Per-task-type min-max normalisation of labels</div>
+      $$\tilde{y}_{m,t} = \begin{cases}
+        \dfrac{y_{m,t} - \min_k y_{k,t}}{\max_k y_{k,t} - \min_k y_{k,t}}
+          & \text{if } \max_k y_{k,t} - \min_k y_{k,t} > 0.01 \\[10pt]
+        0.5 & \text{otherwise (all models equal on this task type)}
+      \end{cases}$$
+    </div>
+
+    <h3>XGBoost hyperparameters</h3>
+    <div class="card">
+      <table style="margin:0">
+        <thead><tr><th>Parameter</th><th>Value</th><th>Rationale</th></tr></thead>
+        <tbody>
+          <tr><td><code>n_estimators</code></td><td>200</td><td>Sufficient for ~330 rows; more trees help given high NaN rate</td></tr>
+          <tr><td><code>max_depth</code></td><td>4</td><td>Shallow trees prevent overfitting on small dataset</td></tr>
+          <tr><td><code>learning_rate</code></td><td>0.05</td><td>Conservative shrinkage with 200 trees</td></tr>
+          <tr><td><code>subsample</code></td><td>0.8</td><td>Row sampling — additional regularisation</td></tr>
+          <tr><td><code>colsample_bytree</code></td><td>0.8</td><td>Feature sampling per tree</td></tr>
+          <tr><td><code>reg_alpha</code></td><td>0.1</td><td>L1 regularisation — sparse feature weights</td></tr>
+          <tr><td><code>reg_lambda</code></td><td>1.0</td><td>L2 regularisation — default XGBoost</td></tr>
+          <tr><td><code>tree_method</code></td><td>hist</td><td>Natively handles NaN (no imputation needed)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Training metrics (current model)</h3>
+    <div class="two-col">
+      <div class="card highlight">
+        <table style="margin:0">
+          <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>MAE</td><td><strong style="color:var(--green)">0.100</strong></td></tr>
+            <tr><td>RMSE</td><td><strong style="color:var(--green)">0.135</strong></td></tr>
+            <tr><td>R²</td><td><strong style="color:var(--green)">0.826</strong></td></tr>
+            <tr><td>Training rows</td><td>310 (10 models × 33 types − skipped)</td></tr>
+            <tr><td>WCB ground-truth rows</td><td>89 (weight = 3.0)</td></tr>
+            <tr><td>Benchmark-derived rows</td><td>221 (weight = 1.0)</td></tr>
+            <tr><td>Avg NaN rate / feature</td><td>~72% (expected — affinity masking)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0">Top features by importance</h3>
+        <table style="margin:0;font-size:13px">
+          <thead><tr><th>Feature</th><th>Importance</th></tr></thead>
+          <tbody>
+            <tr><td><code>speed_output_tps</code></td><td>0.109</td></tr>
+            <tr><td><code>latency_ttft_s</code></td><td>0.086</td></tr>
+            <tr><td><code>moe_density</code></td><td>0.044</td></tr>
+            <tr><td><code>flag_vision</code></td><td>0.037</td></tr>
+            <tr><td><code>affinity_code_code_review</code></td><td>0.035</td></tr>
+            <tr><td><code>affinity_tool_use_terminal_agent</code></td><td>0.035</td></tr>
+            <tr><td><code>affinity_reasoning_long_context</code></td><td>0.034</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════ 6. INFERENCE -->
+  <section id="inference">
+    <h2><span class="num">6</span>Inference &amp; routing</h2>
+
+    <p>All heavy state (XGBoost model, task embeddings, registry, features) is
+    loaded once at startup. Each <code>route()</code> call is ~2–4 ms.</p>
+
+    <h3>Step 1 — Task type classification (sentence-BERT)</h3>
+    <p>Each of the 33 task types has a definition + examples embedded at startup
+    using <code>all-MiniLM-L6-v2</code> (384-dim). At inference:</p>
+
+    <div class="formula">
+      <div class="label">Cosine similarity (L2-normalised embeddings → dot product)</div>
+      $$\text{sim}(q, t) = \mathbf{e}_q \cdot \mathbf{e}_t
+        \qquad \text{where } \|\mathbf{e}_q\|_2 = \|\mathbf{e}_t\|_2 = 1$$
+    </div>
+
+    <p>Top-$k$ task types are selected ($k = 3$ by default) and used as a
+    similarity-weighted ensemble:</p>
+
+    <div class="formula">
+      <div class="label">Ambiguity fallback condition</div>
+      $$\text{if } \max_t \,\text{sim}(q, t) < \theta_{\min}
+        \;\Rightarrow\; \text{route to cheapest eligible model}$$
+      <p style="margin-top:8px;font-size:13px;color:var(--muted)">
+        Default $\theta_{\min} = 0.20$. Configurable via
+        <code>PERF_ROUTER_MIN_SIMILARITY</code>.
+      </p>
+    </div>
+
+    <h3>Step 2 — Quality prediction (XGBoost)</h3>
+    <p>For each of the top-$k$ task types, the feature matrix is constructed
+    with the same masking as training (only one affinity column active).
+    XGBoost predicts a quality score for all models simultaneously:</p>
+
+    <div class="formula">
+      <div class="label">Similarity-weighted quality prediction</div>
+      $$\hat{q}_m = \sum_{t \in \text{top-}k} \frac{\text{sim}(q,t)}{\sum_{t'} \text{sim}(q,t')} \cdot f_{\theta}(\mathbf{x}_{m,t})$$
+      <p style="margin-top:8px;font-size:13px;color:var(--muted)">
+        $f_\theta$ is the trained XGBoost regressor.
+        $\mathbf{x}_{m,t}$ is the masked feature vector for model $m$,
+        task type $t$ (same masking as training time).
+      </p>
+    </div>
+
+    <h3>Step 3 — Adjusted utility &amp; routing decision</h3>
+
+    <div class="formula">
+      <div class="label">Cost normalisation (across pool)</div>
+      $$\tilde{c}_m = \frac{c_m}{\max_k c_k}$$
+    </div>
+
+    <div class="formula">
+      <div class="label">Adjusted utility</div>
+      $$\hat{u}_m = \hat{q}_m - \alpha \cdot \tilde{c}_m$$
+      <p style="margin-top:8px;font-size:13px;color:var(--muted)">
+        $\alpha$ (default 0.3) is configurable at runtime without retraining.
+        $\alpha = 0$ → quality only. $\alpha = 1$ → full cost penalisation.
+      </p>
+    </div>
+
+    <div class="formula">
+      <div class="label">Routing decision (standard mode)</div>
+      $$m^* = \underset{m \in \mathcal{E}}{\arg\max} \;\hat{u}_m$$
+      <p style="margin-top:8px;font-size:13px;color:var(--muted)">
+        $\mathcal{E}$ = eligible model set (after context window, vision, and
+        cost-cap filtering).
+      </p>
+    </div>
+
+    <h3>Degradation threshold mode</h3>
+    <p>Alternative routing strategy: accept any model within $\delta$ of the
+    best quality, then pick the cheapest in that band.</p>
+
+    <div class="formula">
+      <div class="label">Quality floor</div>
+      $$q^{\text{floor}} = \hat{q}_{m^*_\text{quality}} \cdot (1 - \delta)$$
+    </div>
+    <div class="formula">
+      <div class="label">Degradation-threshold routing</div>
+      $$m^* = \underset{m \in \mathcal{E} \,:\, \hat{q}_m \geq q^{\text{floor}}}{\arg\min} \; c_m$$
+      <p style="margin-top:8px;font-size:13px;color:var(--muted)">
+        Default $\delta = 0.0$ (disabled). Set $\delta = 0.10$ to accept up to
+        10% quality drop for a cheaper model.
+      </p>
+    </div>
+
+    <h3>Routing modes</h3>
+    <div class="mode-grid">
+      <div class="mode-card">
+        <div class="mode-title">normal</div>
+        <div class="mode-cond">Condition: query non-empty, $\max \text{sim} \geq \theta_{\min}$</div>
+        <div class="mode-action">Full XGBoost prediction + cost adjustment. Routes to $\arg\max \hat{u}_m$.</div>
+      </div>
+      <div class="mode-card">
+        <div class="mode-title">fallback_ambiguous</div>
+        <div class="mode-cond">Condition: $\max \text{sim} < \theta_{\min}$</div>
+        <div class="mode-action">Classifier is uncertain. Skip XGBoost. Route to cheapest eligible model.</div>
+      </div>
+      <div class="mode-card">
+        <div class="mode-title">fallback_empty</div>
+        <div class="mode-cond">Condition: query is empty/null</div>
+        <div class="mode-action">No text to embed. Route to cheapest eligible model.</div>
+      </div>
+    </div>
+
+    <h3>Eligibility filters (applied before routing)</h3>
+    <table>
+      <thead><tr><th>Filter</th><th>Condition</th><th>Relaxed if all models filtered?</th></tr></thead>
+      <tbody>
+        <tr><td>Context window</td><td>Exclude $m$ if $\text{effective\_context\_k}_m \times 1000 < \text{token\_count}$</td><td>No (hard constraint)</td></tr>
+        <tr><td>Vision</td><td>Exclude non-vision models if <code>has_images=True</code></td><td>No</td></tr>
+        <tr><td>Cost cap</td><td>Exclude $m$ if $c_m > c_{\text{baseline}} \times \gamma$ (default $\gamma = 2.0$)</td><td>Yes — cost cap relaxed first</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════ 7. CONFIG -->
+  <section id="config">
+    <h2><span class="num">7</span>Runtime configuration</h2>
+
+    <p>All parameters below are read at startup and apply without retraining.</p>
+
+    <table>
+      <thead>
+        <tr><th>Env var</th><th>Default</th><th>Effect</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>PERF_ROUTER_COST_WEIGHT</code></td>
+          <td><code>0.3</code></td>
+          <td>$\alpha$ in $\hat{u}_m = \hat{q}_m - \alpha \tilde{c}_m$. Increase to save more cost at expense of quality.</td>
+        </tr>
+        <tr>
+          <td><code>PERF_ROUTER_DEGRADATION_THRESHOLD</code></td>
+          <td><code>0.0</code></td>
+          <td>$\delta$ — fractional quality drop accepted to get a cheaper model. <code>0.10</code> = 10%.</td>
+        </tr>
+        <tr>
+          <td><code>PERF_ROUTER_MIN_SIMILARITY</code></td>
+          <td><code>0.20</code></td>
+          <td>$\theta_{\min}$ — cosine similarity threshold below which query is treated as ambiguous.</td>
+        </tr>
+        <tr>
+          <td><code>PERF_ROUTER_BASELINE</code></td>
+          <td><code>deepseek/deepseek-v4-pro</code></td>
+          <td>Reference model for cost-saved% logging. Does not affect routing.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Adding a new model</h3>
+    <pre><span class="c"># 1. Add entry to models.yaml</span>
+<span class="c"># 2. Re-run pipeline from step 1 (fetches AA data, rebuilds features, retrains)</span>
+uv run perf-pipeline --force-step <span class="num">1</span>
+
+<span class="c"># 3. (Optional) Run WCB on the new model and add its results to</span>
+<span class="c">#    data/wcb_training_labeled.csv, then retrain from step 6 only:</span>
+uv run perf-pipeline --force-step <span class="num">6</span> --wcb-csv data/wcb_training_labeled.csv</pre>
+
+    <h3>WCB seed format</h3>
+    <p><code>data/wcb_training_labeled.csv</code> must have at minimum these columns:</p>
+    <pre><span class="n">model</span>,<span class="n">task_type</span>,<span class="n">overall_score</span>
+<span class="s">deepseek/deepseek-v4-flash</span>,<span class="s">code.generation</span>,<span class="num">0.412</span>
+<span class="s">deepseek/deepseek-v4-flash</span>,<span class="s">code.debugging</span>,<span class="num">0.387</span>
+...</pre>
+    <p style="font-size:13px;color:var(--muted)">
+      One row per (model, task, prompt). Multiple rows for the same
+      (model, task_type) are averaged. The normalised model ID is matched
+      against <code>models.yaml</code> entries using a fuzzy normaliser that
+      strips provider prefix, <code>:free</code> suffix, and version separators.
+    </p>
+  </section>
+
+  <hr>
+  <p style="color:var(--muted);font-size:13px;text-align:center">
+    PerfRouter · generated from source · <code>~/workspace/perfrouter</code>
+  </p>
+
+</div>
+</body>
+</html>
