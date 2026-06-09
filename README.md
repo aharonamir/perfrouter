@@ -8,9 +8,9 @@ Benchmark-driven LLM routing using XGBoost and sentence-BERT. Routes incoming qu
 |---|---|---|
 | **Training signal** | Human preference labels from WildClawBench | Benchmark scores + WCB ground truth |
 | **Routing input** | Query embedding → MLP | Task type (BERT cosine sim) → XGBoost |
-| **Model pool** | Fixed at train time | Updatable via `models.yaml` |
+| **Model pool** | Fixed at train time | Auto-discovered via `discover_models.py` |
 | **Inference cost** | Neural forward pass | Microseconds (tree lookup) |
-| **Adding a model** | Full retrain | Edit YAML, run step 1 |
+| **Adding a model** | Full retrain | Edit YAML or run Step 0, then step 1 |
 
 ## Quick start
 
@@ -27,6 +27,7 @@ Each step is idempotent — re-run only if its inputs changed.
 
 | Step | Command | What it does |
 |------|---------|--------------|
+| 0 | `uv run perf-pipeline --force-step 0` | Auto-discover models from OpenRouter + AA → `models.yaml` |
 | 1 | `uv run perf-pipeline --force-step 1` | Fetch AA benchmark data → `data/model_registry.json` |
 | 2 | `uv run perf-pipeline --force-step 2` | Fetch Arena ELO scores → merged into registry |
 | 3 | `uv run perf-pipeline --force-step 3` | Patch taxonomy with Arena weights |
@@ -34,20 +35,49 @@ Each step is idempotent — re-run only if its inputs changed.
 | 5 | `uv run perf-pipeline --force-step 5` | Compute model feature vectors → `data/model_features.csv` |
 | 6 | `uv run perf-pipeline --force-step 6` | Train XGBoost → `models/perf_router.pkl` |
 
-Full rebuild:
+Full rebuild (includes discovery):
 
 ```bash
 uv run perf-pipeline --force
 ```
 
+## Model pool
+
+The training pool (up to 50 models) is managed in `models.yaml` with two types of entries:
+
+- **Manual entries** — hand-curated, never overwritten by discovery. Add these for models that need precise pricing, custom flags, or aren't yet on Artificial Analysis.
+- **Auto-discovered entries** — added by Step 0 from OpenRouter + AA data, marked with `_discovered: true`. Remove by deleting the entry or adding the id to `discovery.model_blocklist` in `models.yaml`.
+
+Discovery is controlled by the `discovery:` block at the top of `models.yaml`:
+
+```yaml
+discovery:
+  enabled: true
+  pool_size: 50
+  provider_allowlist: [deepseek, google, openai, ...]
+  provider_blocklist: [openrouter]
+  model_blocklist: []
+  selection:
+    aa_intelligence_index_weight: 0.7
+    arena_elo_weight: 0.3
+    min_aa_intelligence_index: 10
+```
+
+To preview what would be added without writing:
+
+```bash
+uv run python perfrouter/pipeline/discover_models.py --dry-run --verbose
+```
+
 ## Adding a new model
 
-1. Edit `models.yaml` — add the model entry with its `id`, `aa_slug`, pricing, and flags.
-2. Run:
-   ```bash
-   uv run perf-pipeline --force-step 1
-   ```
-   This re-fetches AA data, rebuilds features, and retrains from step 1 onwards.
+**Auto-discovery (recommended):** models from supported providers are picked up automatically on the next `--force` run once they appear on Artificial Analysis.
+
+**Manual entry:** add the model directly to `models.yaml` with its `id`, `aa_slug`, pricing, and flags, then run:
+
+```bash
+uv run perf-pipeline --force-step 1
+```
 
 ## Runtime environment variables
 

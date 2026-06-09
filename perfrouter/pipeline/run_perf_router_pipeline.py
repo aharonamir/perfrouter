@@ -10,6 +10,11 @@ incorporate new benchmark data.
 PIPELINE STEPS
 ─────────────────────────────────────────────────────────────────────
 
+  Step 0 — discover_models.py
+    Fetches models from OpenRouter + Artificial Analysis, scores them,
+    and appends qualifying candidates to models.yaml. Skipped if
+    discovery.enabled: false in models.yaml or pool is already full.
+
   Step 1 — fetch_aa_data.py
     Reads models.yaml, fetches Artificial Analysis API benchmark data,
     merges into model_registry.json.
@@ -165,7 +170,7 @@ def main():
     parser.add_argument("--force",         action="store_true",
                         help="Re-run all steps even if outputs exist")
     parser.add_argument("--force-step",    type=int, default=None, metavar="N",
-                        help="Re-run from step N onwards (1-6)")
+                        help="Re-run from step N onwards (0-6)")
     parser.add_argument("--stop-after",    type=int, default=6, metavar="N",
                         help="Stop after step N (default: 6)")
     parser.add_argument("--dry-run",       action="store_true",
@@ -196,8 +201,8 @@ def main():
     # ── Forced steps ──────────────────────────────────────────────────────────
     forced: set[int] = set()
     if args.force:
-        forced = {1, 2, 3, 4, 5, 6}
-    elif args.force_step:
+        forced = {0, 1, 2, 3, 4, 5, 6}
+    elif args.force_step is not None:
         forced = set(range(args.force_step, 7))
 
     def is_forced(n): return n in forced
@@ -224,6 +229,37 @@ def main():
 
     pipeline_start = time.time()
     failed_step    = None
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # STEP 0 — Discover and populate model pool from OpenRouter + AA
+    # ─────────────────────────────────────────────────────────────────────────
+    if args.stop_after >= 0 and failed_step is None:
+        import yaml as _yaml
+        with open(models_yaml, encoding="utf-8") as _f:
+            _cfg = _yaml.safe_load(_f)
+        discovery_enabled = (_cfg or {}).get("discovery", {}).get("enabled", False)
+
+        if not discovery_enabled:
+            skip("Step 0 — Model discovery disabled (discovery.enabled: false)")
+        else:
+            disc_args = ["--models", str(models_yaml)]
+            if aa_key:
+                disc_args += ["--api-key", aa_key]
+            or_key = os.environ.get("OPENROUTER_API_KEY")
+            if or_key:
+                disc_args += ["--or-api-key", or_key]
+
+            success = run_step(
+                step_num    = 0,
+                label       = "Discover model pool (OpenRouter + AA)",
+                script      = HERE / "discover_models.py",
+                args        = disc_args,
+                output_file = None,
+                force       = is_forced(0),
+                dry_run     = args.dry_run,
+            )
+            if not success:
+                failed_step = 0
 
     # ─────────────────────────────────────────────────────────────────────────
     # STEP 1 — Fetch Artificial Analysis benchmark data
